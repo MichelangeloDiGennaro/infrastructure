@@ -1,5 +1,5 @@
 provider "aws" {
-    region = ""
+    region     = "eu-west-1"
     access_key = ""
     secret_key = ""
 }
@@ -27,29 +27,30 @@ resource "aws_dynamodb_table" "tasks_dynamodb_table" {
   billing_mode   = "PROVISIONED"
   read_capacity  = 1
   write_capacity = 1
-  hash_key       = "TaskID"
+  hash_key       = "task_id"
 
   attribute {
-    name = "TaskID"
+    name = "task_id"
     type = "S"
   }
 }
 
-#resource "aws_lambda_function" "task_lambda" {
-  # If the file is not in the current working directory you will need to include a
-  # path.module in the filename.
-  #filename      = "lambda_function_payload.zip"
-  #function_name = "task-service"
-  #role          = aws_iam_role.bil.arn
-  #handler       = "index.test"
+# Genera un suffisso univoco per il nome del bucket e della funzione
+resource "random_id" "bucket_suffix" {
+  byte_length = 8
+}
 
-  #source_code_hash = data.archive_file.lambda.output_base64sha256
+# Crea il bucket S3 con il nome univoco
+resource "aws_s3_bucket" "lambdabucket" {
+  bucket = "lambda-bucket-${random_id.bucket_suffix.hex}"  # Aggiungi il suffisso univoco
+}
 
-  #runtime = "provided.al2023"
-#}
-
-#data "archive_file" "lambda" {
-  #type        = "zip"
-  #source_file = "lambda.js"
-  #output_path = "lambda_function_payload.zip"
-#}
+# Crea la funzione Lambda con il nome univoco
+resource "aws_lambda_function" "task-service" {
+  function_name = "task-service"  # Aggiungi il suffisso univoco
+  s3_bucket    = aws_s3_bucket.lambdabucket.bucket  # Usa il bucket creato
+  s3_key       = "task-service.zip"
+  runtime      = "provided.al2023"
+  handler      = "main"
+  role         = aws_iam_role.bil.arn
+}
