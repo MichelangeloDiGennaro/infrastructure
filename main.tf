@@ -35,21 +35,10 @@ resource "aws_dynamodb_table" "tasks_dynamodb_table" {
   }
 }
 
-# Genera un suffisso univoco per il nome del bucket e della funzione
-resource "random_id" "bucket_suffix" {
-  byte_length = 8
-}
-
-# Crea il bucket S3 con il nome univoco
-resource "aws_s3_bucket" "lambdabucket" {
-  bucket = "lambda-bucket-${random_id.bucket_suffix.hex}"  # Aggiungi il suffisso univoco
-}
-
 # Crea la funzione Lambda con il nome univoco
 resource "aws_lambda_function" "task-service" {
   function_name = "task-service"  # Aggiungi il suffisso univoco
-  s3_bucket    = aws_s3_bucket.lambdabucket.bucket  # Usa il bucket creato
-  s3_key       = "task-service.zip"
+  filename     = "task-service.zip"
   runtime      = "provided.al2023"
   handler      = "main"
   role         = aws_iam_role.bil.arn
