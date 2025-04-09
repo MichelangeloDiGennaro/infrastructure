@@ -35,11 +35,30 @@ resource "aws_dynamodb_table" "tasks_dynamodb_table" {
   }
 }
 
+resource "aws_iam_role_policy" "dynamodb_access_for_lambda" {
+  name = "lambda-dynamodb-access"
+  role = aws_iam_role.bil.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem"
+        ]
+        Resource = aws_dynamodb_table.tasks_dynamodb_table.arn
+      }
+    ]
+  })
+}
+
+
 # Crea la funzione Lambda con il nome univoco
 resource "aws_lambda_function" "task-service" {
-  function_name = "task-service"  # Aggiungi il suffisso univoco
+  function_name = "task-service"
   filename     = "task-service.zip"
   runtime      = "provided.al2023"
-  handler      = "main"
+  handler      = "bootstrap"
   role         = aws_iam_role.bil.arn
 }
